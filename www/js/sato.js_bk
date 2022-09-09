@@ -1,0 +1,528 @@
+var changeId = function(){
+}
+var id = setTimeout(changeId, 600);
+var getLiLength = 20;
+ 
+$(function(){
+	//外部リンクにtarget blank
+	$('a[href^=https]').not('[href*="'+location.hostname+'"]').attr('target', '_blank');
+	//検索リセット
+	$('.search-form-content-btn-reset').click(function() {
+		$('input[type="checkbox"]').prop('checked', false);
+		$('input[name="free"]').val('');
+		$('.search-form-content input[type="hidden"]').val('');
+	});
+	//検索をaccordionに
+	$(".motto").click(function() {
+        $("#block").slideToggle(function() {
+            if ($("#block").css('display') == 'block') {
+                $(".motto span").text('▲');
+            } else {
+                $(".motto span").text('▼');
+            };
+        });
+    });
+
+
+
+    //リストファインダー設定
+	var inputId = "frm_forminput";
+	var inputText = '以下のフォームに必要事項をご⼊⼒の上、「確認」を押してください。<br><br><span class="inquiry_hissu">※必須となっている項目は必ず入力してください。</span>';
+	var confirmText = "以下の内容が正しければ、「送信」を押してください。";
+	var thanksText = "<span style='font-size:20px;font-wight:bold;'>お申込みありがとうございました。</span><br><br>以下の通りお申込みを受け付けました。<br>なお、ご入力いただいたメールアドレス宛に受付完了メールを配信しております。<br>完了メールが届かない場合、処理が正常に行われていない可能性がありますので、<br>大変お手数ですが、再度お申込みの手続きをお願いいたします。";
+
+	//　お問い合わせページ
+	$("form").each(function() {
+		if ($(".inquiry_text")) {
+			$(".inquiry .inquiry_text").html(inputText);
+		}
+	});
+
+	//　お問い合わせ確認
+	$(document).on("click", "#lf_form_submit_button", function(){
+        $('body, html').animate({ scrollTop: 0 }, 500);
+		setTimeout(function() {
+		    var getThisH1 = $(".key h1").text();
+			$(".button_area").css({ "display": "flex","margin-top":"20px"});
+			$("#button_confirm_submit").attr("onClick","ga('send', 'event', 'pcsp', 'contact', '"+getThisH1+"'); this.disabled = true;");
+			$(".inquiry .inquiry_text").html(confirmText);
+		}, 1000);
+
+		//　お問い合わせ完了
+		const MAX_RETRY_COUNT_FIND_DIFF_CONTAINER = 100;
+		var set_interval_id = setInterval(findTargetElement, 1000);
+		var retry_counter = 0;
+		function findTargetElement() {
+		    retry_counter++;
+		    // 要素がMAXリトライ値になっても見つからない場合、インターバルを削除
+		    if(retry_counter > MAX_RETRY_COUNT_FIND_DIFF_CONTAINER) {
+		        clearInterval(set_interval_id);
+		    }
+		    var diff_container_elements = $('input[value="閉じる"]');
+		    if(diff_container_elements.length > 0) {
+		        clearInterval(set_interval_id);
+		        // やりたい処理を呼ぶ(”隠す”ボタンを設置する関数)
+		        addHideBtn(diff_container_elements);
+		    }       
+		}
+
+		function addHideBtn(diff_container_elements) {
+			$('body, html').animate({ scrollTop: 0 }, 500);
+			$(".inquiry .inquiry_text").html(thanksText);
+		}
+	});
+
+
+
+
+/*
+	$(document).on("click", "#button_confirm_submit", function(){
+	    $('body, html').animate({ scrollTop: 0 }, 500);
+		setTimeout(function() {
+			$(".inquiry .inquiry_text").html(thanksText);
+		}, 1000);
+	});
+	*/
+});
+
+
+
+$(document).on('keyup', 'input[name="free"]', function(){
+    $(this).val($(this).val().replace(/　/g,' '));
+});
+
+
+//search
+$(document).ready(function(){
+	search();
+  var url = location.href;
+  var host = location.host;
+  var home = location.protocol + '//' + host + "/search/";
+  if(url.indexOf(home) > -1) {
+    result();
+  }
+});
+
+//パラメーターセット
+function search(){
+	$('.all_cat input[type="checkbox"]').on('change', function(event) {
+	    //メインカテゴリのチェック-------------------------------
+	    all_cat_check = $('.all_cat input[type="checkbox"]:checked').map(function(){
+	      return $(this).val();
+	    }).get();
+	    $('input[name="all_cat"]').val(all_cat_check);
+    });
+
+    $('.products_cat input[type="checkbox"]').on('change', function(event) {
+	    //メインカテゴリのチェック-------------------------------
+	    products_cat_check = $('.products_cat input[type="checkbox"]:checked').map(function(){
+	      return $(this).val();
+	    }).get();
+	    $('input[name="products_cat"]').val(products_cat_check);
+    });
+
+    $('.industry_cat input[type="checkbox"]').on('change', function(event) {
+	    //メインカテゴリのチェック-------------------------------
+	    industry_cat_check = $('.industry_cat input[type="checkbox"]:checked').map(function(){
+	      return $(this).val();
+	    }).get();
+	    $('input[name="industry_cat"]').val(industry_cat_check);
+    });
+}
+
+
+function result(){
+
+	//パラメータを取得--------------------------------------------------------------------
+	//var postList = '';
+	var postList_products = '';
+	var postList_industry = '';
+	var postList_column = '';
+	var postList_seminar = '';
+	var postList_training = '';
+	var postList_case = '';
+	var postList_news = '';
+	var postList_lab = '';
+	var arg  = new Object;
+	url = location.search.substring(1).split('&');
+
+	for(i=0; url[i]; i++) {
+	    var k = url[i].split('=');
+	    arg[k[0]] = k[1];
+	}
+	//各ワードを配列に格納-----------------------------------------------------------------
+	var free = '';
+	var Sfree = '';
+	var all_cat = '';
+	var products_cat = '';
+	var industry_cat = '';
+	if(arg.free != undefined){
+		free = decodeURIComponent(arg.free.toLowerCase()).split("+");
+		//キーワード
+		free = free.filter(Boolean);
+	}
+	if(arg.all_cat != undefined){
+		//全体カテゴリ
+		all_cat = decodeURIComponent(arg.all_cat.toLowerCase()).split(",");
+	}
+	if(arg.products_cat != undefined){
+		//製品カテゴリ
+		products_cat = decodeURIComponent(arg.products_cat.toLowerCase()).split(",");
+	}
+	if(arg.industry_cat != undefined){
+		//業種・⽤途
+		industry_cat = decodeURIComponent(arg.industry_cat.toLowerCase()).split(",");
+	}
+	//各ワードを検索検索フォームに入れ込み-----------------------------------------------------
+	if(arg.free){
+		Sfree = free.join(' ');
+	}
+	//フリーワード
+	$('input[name="free"]').val(Sfree);
+	//全体カテゴリ
+	if(arg.all_cat != undefined || arg.products_cat != undefined || arg.industry_cat != undefined){
+		$(".motto span").text('▲');
+		$("#block").css('display','block');
+	}
+	
+
+
+	$('.all_cat input').each(function(index, element) {
+      var check_val = $(this).val();
+      //一致したcheckboxにcheck
+      if($.inArray(check_val, all_cat) != -1){
+        $(this).prop('checked', true);
+      }else{
+        //一致していないものを外す
+        $(this).prop('checked', false);
+      }
+    });
+    //製品カテゴリ
+	$('.products_cat input').each(function(index, element) {
+      var check_val = $(this).val();
+      //一致したcheckboxにcheck
+      if($.inArray(check_val, products_cat) != -1){
+        $(this).prop('checked', true);
+      }else{
+        //一致していないものを外す
+        $(this).prop('checked', false);
+      }
+    });
+    //業種
+	$('.industry_cat input').each(function(index, element) {
+      var check_val = $(this).val();
+      //一致したcheckboxにcheck
+      if($.inArray(check_val, industry_cat) != -1){
+        $(this).prop('checked', true);
+      }else{
+        //一致していないものを外す
+        $(this).prop('checked', false);
+      }
+    });
+	//hiddenに格納----------------------------------------------------------
+    //メインカテゴリのチェック-------------------------------
+    all_cat_check = $('.all_cat input[type="checkbox"]:checked').map(function(){
+      return $(this).val();
+    }).get();
+    $('input[name="all_cat"]').val(all_cat_check);
+
+    //メインカテゴリのチェック-------------------------------
+    products_cat_check = $('.products_cat input[type="checkbox"]:checked').map(function(){
+      return $(this).val();
+    }).get();
+    $('input[name="products_cat"]').val(products_cat_check);
+
+    //メインカテゴリのチェック-------------------------------
+    industry_cat_check = $('.industry_cat input[type="checkbox"]:checked').map(function(){
+      return $(this).val();
+    }).get();
+    $('input[name="industry_cat"]').val(industry_cat_check);
+
+	//jsonループ--------------------------------------------------------------------------
+/*
+
+◆検索結果を増やす方法
+
+▼検索ボタン
+全体カテゴリ	all_cat
+製品カテゴリ	products_cat
+業種・用途	industry_cat
+文字検索	free
+
+▼検索対象
+data.item[i].title
+data.item[i].body
+data.item[i].cat
+data.item[i].product_name
+data.item[i].CatTag
+data.item[i].area
+data.item[i].seminarTag
+data.item[i].industrytag
+
+検索結果としてかかったものを表示させるには、
+「検索ボタン」で追加したボタンの位置を追加し、
+検索対象を指定し、
+一致した場合はtrueを指定する。
+
+◆例：全体カテゴリにWEBセミナーを追加する
+「全体カテゴリ」に「WEBセミナー」ボタンを追加。
+「セミナータグ」に「WEBセミナー」を追加。
+＝
+「all_cat」と「seminarTag」を比較し、一致した場合はtrueにした。
+
+*/
+	$.when(
+	    //$("#result_technology").html(""),
+	    $.getJSON("../post.js", function(data) {
+	    	//jsonのループ
+	    	for (var i = 0; i < data.item.length; i++) {
+	    		var post_match = false;
+	    		//記事の出力の関数
+	    		function post_true(){
+    				//記事ここから
+    				var post_url = data.item[i].url;
+    				var seminarTag = data.item[i].seminarTag.split(",");
+					var area = data.item[i].area.split(",");
+					var catTag = data.item[i].CatTag.split(",");
+					var product_name = data.item[i].product_name.split(",");
+					var industrytag = data.item[i].industrytag.split(",");
+					var post_icon = '';
+					var thum = '';
+					if(seminarTag[0] != null){
+						for (var h = 0; h < seminarTag.length; h++) {
+							if(seminarTag[h] != ''){
+								post_icon += '<a class="listBox-cat listBox-cat01" href="/search/?free=' + seminarTag[h] + '">' + seminarTag[h] + '</a>'
+							}
+						};
+					}
+					if(area[0] != null){
+						for (var h = 0; h < area.length; h++) {
+							if(area[h] != ''){
+								post_icon += '<a class="listBox-cat listBox-cat03" href="/search/?free=' + area[h] + '">' + area[h] + '</a>'
+							}
+						};
+					}
+					if(catTag[0] != null){
+						for (var h = 0; h < catTag.length; h++) {
+							if(catTag[h] != ''){
+								post_icon += '<a class="listBox-cat listBox-cat02" href="/search/?free=' + catTag[h] + '">' + catTag[h] + '</a>'
+							}
+						};
+					}
+					if(product_name[0] != null){
+						for (var h = 0; h < product_name.length; h++) {
+							if(product_name[h] != ''){
+								post_icon += '<a class="listBox-cat listBox-cat02" href="/search/?free=' + product_name[h] + '">' + product_name[h] + '</a>'
+							}
+						};
+					}
+					if(industrytag[0] != null){
+						for (var h = 0; h < industrytag.length; h++) {
+							if(industrytag[h] != ''){
+								post_icon += '<a class="listBox-cat listBox-cat02" href="/search/?free=' + industrytag[h] + '">' + industrytag[h] + '</a>'
+							}
+						};
+					}
+					if(data.item[i].thum != ''){
+						thum = data.item[i].thum;
+					}else{
+						thum = '/img/common/noimg.jpg';
+					}
+					//製品の記事を代入
+					if (post_url.indexOf('/products/') >= 0) {
+						postList_products += '<li><a class="listBox-imgWrap" href="' + data.item[i].url + '"><img src="' + thum + '" alt="' + data.item[i].title + '"></a><div class="listBox-txtWrap"><div class="listBox-txtHeadWrap"><div class="listBox-catWrap">' + post_icon + '</div></div><p class="listBox-ttl"><a href="' +  data.item[i].url + '">' + data.item[i].title + '</a></p><p class="listBox-excerpt">' + data.item[i].body +'</p><a class="listBox-more" href="' + data.item[i].url +'">もっと詳しく</a></div></li>';
+					}
+					//事例の記事を代入
+					if (post_url.indexOf('/case_list/') >= 0) {
+						postList_case += '<li><a class="listBox-imgWrap" href="' + data.item[i].url + '"><img src="' + thum + '" alt="' + data.item[i].title + '"></a><div class="listBox-txtWrap"><div class="listBox-txtHeadWrap"><div class="listBox-catWrap">' + post_icon + '</div></div><p class="listBox-ttl"><a href="' +  data.item[i].url + '">' + data.item[i].title + '</a></p><p class="listBox-excerpt">' + data.item[i].body +'</p><a class="listBox-more" href="' + data.item[i].url +'">もっと詳しく</a></div></li>';
+					}
+					//技術コラムの記事を代入
+					if (post_url.indexOf('/column/') >= 0) {
+						postList_column += '<li><a class="listBox-imgWrap" href="' + data.item[i].url + '"><img src="' + thum + '" alt="' + data.item[i].title + '"></a><div class="listBox-txtWrap"><div class="listBox-txtHeadWrap"><div class="listBox-catWrap">' + post_icon + '</div></div><p class="listBox-ttl"><a href="' +  data.item[i].url + '">' + data.item[i].title + '</a></p><p class="listBox-excerpt">' + data.item[i].body +'</p><a class="listBox-more" href="' + data.item[i].url +'">もっと詳しく</a></div></li>';
+					}
+					//セミナーの記事を代入
+					if (post_url.indexOf('/event_seminar/') >= 0) {
+						postList_seminar += '<li><a class="listBox-imgWrap" href="' + data.item[i].url + '"><img src="' + thum + '" alt="' + data.item[i].title + '"></a><div class="listBox-txtWrap"><div class="listBox-txtHeadWrap"><div class="listBox-catWrap">' + post_icon + '</div></div><p class="listBox-ttl"><a href="' +  data.item[i].url + '">' + data.item[i].title + '</a></p><p class="listBox-excerpt">' + data.item[i].body +'</p><a class="listBox-more" href="' + data.item[i].url +'">もっと詳しく</a></div></li>';
+					}
+					//ニュースの記事を代入
+					if (post_url.indexOf('/news/') >= 0) {
+						postList_news += '<li><a class="listBox-imgWrap" href="' + data.item[i].url + '"><img src="' + thum + '" alt="' + data.item[i].title + '"></a><div class="listBox-txtWrap"><div class="listBox-txtHeadWrap"><div class="listBox-catWrap">' + post_icon + '</div></div><p class="listBox-ttl"><a href="' +  data.item[i].url + '">' + data.item[i].title + '</a></p><p class="listBox-excerpt">' + data.item[i].body +'</p><a class="listBox-more" href="' + data.item[i].url +'">もっと詳しく</a></div></li>';
+					}
+					//講習会の記事を代入
+					if (post_url.indexOf('/training/') >= 0) {
+						postList_training += '<li><a class="listBox-imgWrap" href="' + data.item[i].url + '"><img src="' + thum + '" alt="' + data.item[i].title + '"></a><div class="listBox-txtWrap"><div class="listBox-txtHeadWrap"><div class="listBox-catWrap">' + post_icon + '</div></div><p class="listBox-ttl"><a href="' +  data.item[i].url + '">' + data.item[i].title + '</a></p><p class="listBox-excerpt">' + data.item[i].body +'</p><a class="listBox-more" href="' + data.item[i].url +'">もっと詳しく</a></div></li>';
+					}
+					//SBD利用技術研究会の記事を代入
+					if (post_url.indexOf('/lab/') >= 0) {
+						postList_lab += '<li><a class="listBox-imgWrap" href="' + data.item[i].url + '"><img src="' + thum + '" alt="' + data.item[i].title + '"></a><div class="listBox-txtWrap"><div class="listBox-txtHeadWrap"><div class="listBox-catWrap">' + post_icon + '</div></div><p class="listBox-ttl"><a href="' +  data.item[i].url + '">' + data.item[i].title + '</a></p><p class="listBox-excerpt">' + data.item[i].body +'</p><a class="listBox-more" href="' + data.item[i].url +'">もっと詳しく</a></div></li>';
+					}
+					//業種カテゴリの記事を代入
+					if (post_url.indexOf('/industry/') >= 0) {
+						postList_industry += '<li><a class="listBox-imgWrap" href="' + data.item[i].url + '"><img src="' + thum + '" alt="' + data.item[i].title + '"></a><div class="listBox-txtWrap"><div class="listBox-txtHeadWrap"><div class="listBox-catWrap">' + post_icon + '</div></div><p class="listBox-ttl"><a href="' +  data.item[i].url + '">' + data.item[i].title + '</a></p><p class="listBox-excerpt">' + data.item[i].body +'</p><a class="listBox-more" href="' + data.item[i].url +'">もっと詳しく</a></div></li>';
+					}
+    			}
+    			//各検索の判定、OK=true NG=false
+    			var post_match_flag = false;
+    			var post_match_free = true;
+    			//キーワードの一致判定のループ
+    			if(free[0] != undefined){
+	    			for (var j = 0; j < free.length; j++) {
+		    			if ((data.item[i].title.toLowerCase().replace(/\s+/g, "")).indexOf(free[j].replace(/\s+/g, "")) >= 0) {
+		    				post_match_flag = true;
+		    				post_match_free = true;
+		    				break;
+		    			}else if ((data.item[i].body.toLowerCase().replace(/\s+/g, "")).indexOf(free[j].replace(/\s+/g, "")) >= 0) {
+		    				post_match_flag = true;
+		    				post_match_free = true;
+		    				break;
+		    			}else if ((data.item[i].cat.toLowerCase().replace(/\s+/g, "")).indexOf(free[j].replace(/\s+/g, "")) >= 0) {
+		    				post_match_flag = true;
+		    				post_match_free = true;
+		    				break;
+		    			}else if ((data.item[i].product_name.toLowerCase().replace(/\s+/g, "")).indexOf(free[j].replace(/\s+/g, "")) >= 0) {
+		    				post_match_flag = true;
+		    				post_match_free = true;
+		    				break;
+		    			}else if ((data.item[i].CatTag.toLowerCase().replace(/\s+/g, "")).indexOf(free[j].replace(/\s+/g, "")) >= 0) {
+		    				post_match_flag = true;
+		    				post_match_free = true;
+		    				break;
+		    			}else if ((data.item[i].area.toLowerCase().replace(/\s+/g, "")).indexOf(free[j].replace(/\s+/g, "")) >= 0) {
+		    				post_match_flag = true;
+		    				post_match_free = true;
+		    				break;
+		    			}else if ((data.item[i].seminarTag.toLowerCase().replace(/\s+/g, "")).indexOf(free[j].replace(/\s+/g, "")) >= 0) {
+		    				post_match_flag = true;
+		    				post_match_free = true;
+		    				break;
+		    			}else if ((data.item[i].industrytag.toLowerCase().replace(/\s+/g, "")).indexOf(free[j].replace(/\s+/g, "")) >= 0) {
+		    				post_match_flag = true;
+		    				post_match_free = true;
+		    				break;
+		    			}else{
+		    				post_match_flag = false;
+		    				post_match_free = false;
+		    			}
+		    		};
+		    	}
+
+		    	var post_match_all_cat = true;
+		    	if(all_cat[0] != undefined){
+	    			for (var j = 0; j < all_cat.length; j++) {
+	    				//console.log(data.item[i].title + data.item[i].cat + all_cat[j]);
+		    			if ((data.item[i].seminarTag.toLowerCase().replace(/\s+/g, "")).indexOf(all_cat[j].replace(/\s+/g, "")) >= 0) {
+			    				post_match_flag = true;
+			    				post_match_all_cat = true;
+			    				break;
+		    			} else {
+			    			if ((data.item[i].cat.toLowerCase().replace(/\s+/g, "")).indexOf(all_cat[j].replace(/\s+/g, "")) >= 0) {
+			    				post_match_flag = true;
+			    				post_match_all_cat = true;
+			    				break;
+			    			}else{
+			    				post_match_flag = false;
+			    				post_match_all_cat = false;
+			    			}
+		    			}
+
+		    		};
+		    	}
+
+		    	var post_match_products_cat = true;
+		    	if(products_cat[0] != undefined){
+	    			for (var j = 0; j < products_cat.length; j++) {
+	    				if ((data.item[i].cat.toLowerCase().replace(/\s+/g, "")).indexOf(products_cat[j].replace(/\s+/g, "")) >= 0) {
+		    				post_match_flag = true;
+		    				break;
+		    			}else if ((data.item[i].CatTag.toLowerCase().replace(/\s+/g, "")).indexOf(products_cat[j].replace(/\s+/g, "")) >= 0) {
+		    				post_match_flag = true;
+		    				post_match_products_cat = true;
+		    				break;
+		    			}else{
+		    				post_match_flag = false;
+		    				post_match_products_cat = false;
+		    			}
+		    		};
+		    	}
+
+		    	var post_match_industry_cat = true;
+		    	if(industry_cat[0] != undefined){
+	    			for (var j = 0; j < industry_cat.length; j++) {
+	    				if ((data.item[i].cat.toLowerCase().replace(/\s+/g, "")).indexOf(industry_cat[j].replace(/\s+/g, "")) >= 0) {
+		    				post_match_flag = true;
+		    				post_match_industry_cat = true;
+		    				break;
+		    			}else if ((data.item[i].industrytag.toLowerCase().replace(/\s+/g, "")).indexOf(industry_cat[j].replace(/\s+/g, "")) >= 0) {
+		    				post_match_flag = true;
+		    				post_match_industry_cat = true;
+		    				break;
+		    			}else{
+		    				post_match_flag = false;
+		    				post_match_industry_cat = false;
+		    			}
+		    		};
+		    	}
+		    	//console.log(data.item[i].title + data.item[i].cat);
+	    		if(post_match_flag == true && post_match_free == true && post_match_all_cat == true && post_match_products_cat == true && post_match_industry_cat == true){
+	    			post_true();
+	    		}
+	    	};
+		})
+	).done(function(){
+		//console.log('・製品' + postList_products +　'・業種' + postList_industry +　'・コラム' + postList_column +　'・セミナー' + postList_seminar +　'講習会' + postList_training +　'・事例' + postList_case +　'・事例' + postList_news +　'・SBD利用技術研究会' + postList_lab );
+		if(postList_products == '' && postList_industry == '' && postList_column == '' && postList_seminar == '' && postList_training == '' && postList_case == '' && postList_news == '' && postList_lab == ''){
+			$('.result-List').append('<p style="text-align:center;width:100%;margin-top:-30px;">お探しの記事はございませんでしたので、再度条件を設定して下さい。</p>');
+		}
+		if(postList_products != ''){
+			$('.result-List').append('<h2 class="contents_borderTtl">製品</h2><ul class="listBox listBox-noDate">' + postList_products + '</ul>');
+		}
+		if(postList_industry != ''){
+			$('.result-List').append('<h2 class="contents_borderTtl">業種・用途</h2><ul class="listBox listBox-noDate">' + postList_industry + '</ul>');
+		}
+		if(postList_seminar != ''){
+			$('.result-List').append('<h2 class="contents_borderTtl">イベント・セミナー</h2><ul class="listBox">' + postList_seminar + '</ul>');
+		}
+		if(postList_case != ''){
+			$('.result-List').append('<h2 class="contents_borderTtl">事例</h2><ul class="listBox listBox-noDate">' + postList_case + '</ul>');
+		}
+		if(postList_news != ''){
+			$('.result-List').append('<h2 class="contents_borderTtl">ニュース/プレスリリース</h2><ul class="listBox">' + postList_news + '</ul>');
+		}
+		if(postList_column != ''){
+			$('.result-List').append('<h2 class="contents_borderTtl">技術コラム</h2><ul class="listBox listBox-noDate">' + postList_column + '</ul>');
+		}
+		if(postList_training != ''){
+			$('.result-List').append('<h2 class="contents_borderTtl">講習会</h2><ul class="listBox listBox-noDate">' + postList_training + '</ul>');
+		}
+		if(postList_lab != ''){
+			$('.result-List').append('<h2 class="contents_borderTtl">SBD利用技術研究会</h2><ul class="listBox listBox-noDate">' + postList_lab + '</ul>');
+		}
+		//$('.listBox-noDate').append(postList);
+    //10件ずつ表示
+    $("#searchList li").hide();
+    console.log($("#searchList li").length)
+
+    if($("#searchList li").length < 10 ){
+    	$("#moreBtn").hide();
+    }
+    for(i=0; i < getLiLength/2; i++){
+	    $("#searchList li").eq(i).show();
+    }
+
+	$("#moreBtn").click( function(){
+	    $("#searchList li").each( function(){
+	    	if($(this).index() <= getLiLength ){
+		    	$(this).show(0, function(){
+				    if($("#searchList li").length <= getLiLength ){
+				    	$("#moreBtn").hide(0);
+				    }
+		    	});
+	    	}
+	    });
+	    getLiLength = getLiLength + 10;
+	});
+	});
+
+}
+
+
